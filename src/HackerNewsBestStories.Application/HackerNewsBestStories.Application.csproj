@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\HackerNewsBestStories.Core\HackerNewsBestStories.Core.csproj" />
+  </ItemGroup>
+
+</Project>
