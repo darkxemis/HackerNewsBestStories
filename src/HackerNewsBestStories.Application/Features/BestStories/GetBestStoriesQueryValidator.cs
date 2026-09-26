@@ -6,7 +6,7 @@ public sealed class GetBestStoriesQueryValidator : AbstractValidator<GetBestStor
 {
     public GetBestStoriesQueryValidator()
     {
-        RuleFor(x => x.N)
-            .InclusiveBetween(1, 500).WithMessage("N must be between 1 and 500.");
+        RuleFor(x => x.StoryCount)
+            .InclusiveBetween(1, 500).WithMessage("Story count must be between 1 and 500.");
     }
 }

@@ -19,8 +19,8 @@ public sealed class GetBestStoriesQueryHandler(
         try
         {
             var stories = await cache.GetOrCreateAsync(
-                $"best-stories:{request.N}",
-                async token => await FetchStoriesAsync(request.N, token),
+                $"best-stories:{request.StoryCount}",
+                async token => await FetchStoriesAsync(request.StoryCount, token),
                 cancellationToken: cancellationToken);
 
             return Result<IReadOnlyList<StoryDto>>.Success(stories);
@@ -31,41 +31,41 @@ public sealed class GetBestStoriesQueryHandler(
         }
     }
 
-    private async Task<List<StoryDto>> FetchStoriesAsync(int n, CancellationToken cancellationToken)
+    private async Task<List<StoryDto>> FetchStoriesAsync(int storyCount, CancellationToken cancellationToken)
     {
-        var idsResult = await hackerNewsClient.GetBestStoryIdsAsync(cancellationToken);
+        var bestStoryIdsResult = await hackerNewsClient.GetBestStoryIdsAsync(cancellationToken);
 
-        if (idsResult.IsFailure)
+        if (bestStoryIdsResult.IsFailure)
         {
-            throw new HackerNewsRequestException(idsResult.Error!);
+            throw new HackerNewsRequestException(bestStoryIdsResult.Error!);
         }
 
-        var ids = idsResult.Value!.Take(n);
+        var topStoryIds = bestStoryIdsResult.Value!.Take(storyCount);
 
-        var storyResults = await Task.WhenAll(
-            ids.Select(id => hackerNewsClient.GetStoryAsync(id, cancellationToken)));
+        var fetchedStories = await Task.WhenAll(
+            topStoryIds.Select(id => hackerNewsClient.GetStoryAsync(id, cancellationToken)));
 
-        var stories = new List<Story>(storyResults.Length);
+        var stories = new List<Story>(fetchedStories.Length);
 
-        foreach (var storyResult in storyResults)
+        foreach (var fetchedStory in fetchedStories)
         {
-            if (storyResult.IsFailure)
+            if (fetchedStory.IsFailure)
             {
-                if (storyResult.Error!.Code == ErrorTags.HackerNews.StoryNotFound)
+                if (fetchedStory.Error!.Code == ErrorTags.HackerNews.StoryNotFound)
                 {
                     continue;
                 }
 
-                throw new HackerNewsRequestException(storyResult.Error);
+                throw new HackerNewsRequestException(fetchedStory.Error);
             }
 
-            stories.Add(storyResult.Value!);
+            stories.Add(fetchedStory.Value!);
         }
 
         return stories
             .OrderByDescending(story => story.Score)
             .ThenByDescending(story => story.Id)
-            .Take(n)
+            .Take(storyCount)
             .Select(StoryDto.From)
             .ToList();
     }

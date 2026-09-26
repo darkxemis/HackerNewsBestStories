@@ -12,7 +12,7 @@ using Polly.Timeout;
 
 public sealed class HackerNewsApiClient(
     IHttpClientFactory httpClientFactory,
-    HackerNewsConcurrencyGate gate,
+    HackerNewsConcurrencyGate concurrencyGate,
     ILogger<HackerNewsApiClient> logger) : IHackerNewsApiClient
 {
     public const string ApiClientName = "HackerNews";
@@ -56,16 +56,16 @@ public sealed class HackerNewsApiClient(
     }
 
     private async Task<Result<T>> ExecuteAsync<T>(
-        Func<HttpClient, Task<T>> request,
+        Func<HttpClient, Task<T>> sendRequest,
         CancellationToken cancellationToken)
     {
         try
         {
             var client = httpClientFactory.CreateClient(ApiClientName);
 
-            var payload = await gate.ExecuteAsync(_ => request(client), cancellationToken);
+            var value = await concurrencyGate.ExecuteAsync(_ => sendRequest(client), cancellationToken);
 
-            return Result<T>.Success(payload);
+            return Result<T>.Success(value);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
