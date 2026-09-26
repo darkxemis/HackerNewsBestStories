@@ -8,5 +8,7 @@ public sealed class HackerNewsOptions
 
     public double RequestTimeoutSeconds { get; set; } = 10;
 
+    public double TotalTimeoutSeconds { get; set; } = 30;
+
     public int MaxConcurrentRequests { get; set; } = 8;
 }

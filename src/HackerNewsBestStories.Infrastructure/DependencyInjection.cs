@@ -12,6 +12,9 @@ public static class DependencyInjection
     {
         services.Configure<HackerNewsOptions>(configuration.GetSection(HackerNewsOptions.SectionName));
 
+        var hackerNewsOptions = configuration.GetSection(HackerNewsOptions.SectionName).Get<HackerNewsOptions>()
+            ?? new HackerNewsOptions();
+
         services.AddSingleton(sp =>
         {
             var options = sp.GetRequiredService<IOptions<HackerNewsOptions>>().Value;
@@ -24,7 +27,12 @@ public static class DependencyInjection
             var options = sp.GetRequiredService<IOptions<HackerNewsOptions>>().Value;
 
             client.BaseAddress = new Uri(options.BaseAddress);
-            client.Timeout = TimeSpan.FromSeconds(options.RequestTimeoutSeconds);
+            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+        })
+        .AddStandardResilienceHandler(options =>
+        {
+            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(hackerNewsOptions.RequestTimeoutSeconds);
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(hackerNewsOptions.TotalTimeoutSeconds);
         });
 
         services.AddSingleton<IHackerNewsApiClient, HackerNewsApiClient>();

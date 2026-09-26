@@ -6,22 +6,41 @@ using HackerNewsBestStories.Core.Common.Exceptions;
 using HackerNewsBestStories.Core.Common.Results;
 using HackerNewsBestStories.Core.Domain;
 using MediatR;
+using Microsoft.Extensions.Caching.Hybrid;
 
 public sealed class GetBestStoriesQueryHandler(
-    IHackerNewsApiClient hackerNewsClient) : IRequestHandler<GetBestStoriesQuery, Result<IReadOnlyList<StoryDto>>>
+    IHackerNewsApiClient hackerNewsClient,
+    HybridCache cache) : IRequestHandler<GetBestStoriesQuery, Result<IReadOnlyList<StoryDto>>>
 {
     public async Task<Result<IReadOnlyList<StoryDto>>> Handle(
         GetBestStoriesQuery request,
         CancellationToken cancellationToken)
     {
+        try
+        {
+            var stories = await cache.GetOrCreateAsync(
+                $"best-stories:{request.N}",
+                async token => await FetchStoriesAsync(request.N, token),
+                cancellationToken: cancellationToken);
+
+            return Result<IReadOnlyList<StoryDto>>.Success(stories);
+        }
+        catch (HackerNewsRequestException ex)
+        {
+            return Result<IReadOnlyList<StoryDto>>.Failure(ex.Error);
+        }
+    }
+
+    private async Task<List<StoryDto>> FetchStoriesAsync(int n, CancellationToken cancellationToken)
+    {
         var idsResult = await hackerNewsClient.GetBestStoryIdsAsync(cancellationToken);
 
         if (idsResult.IsFailure)
         {
-            return Result<IReadOnlyList<StoryDto>>.Failure(idsResult.Error!);
+            throw new HackerNewsRequestException(idsResult.Error!);
         }
 
-        var ids = idsResult.Value!.Take(request.N);
+        var ids = idsResult.Value!.Take(n);
 
         var storyResults = await Task.WhenAll(
             ids.Select(id => hackerNewsClient.GetStoryAsync(id, cancellationToken)));
@@ -37,19 +56,22 @@ public sealed class GetBestStoriesQueryHandler(
                     continue;
                 }
 
-                return Result<IReadOnlyList<StoryDto>>.Failure(storyResult.Error);
+                throw new HackerNewsRequestException(storyResult.Error);
             }
 
             stories.Add(storyResult.Value!);
         }
 
-        var storyDtos = stories
+        return stories
             .OrderByDescending(story => story.Score)
             .ThenByDescending(story => story.Id)
-            .Take(request.N)
+            .Take(n)
             .Select(StoryDto.From)
             .ToList();
+    }
 
-        return Result<IReadOnlyList<StoryDto>>.Success(storyDtos);
+    private sealed class HackerNewsRequestException(Error error) : Exception(error.Message)
+    {
+        public Error Error { get; } = error;
     }
 }

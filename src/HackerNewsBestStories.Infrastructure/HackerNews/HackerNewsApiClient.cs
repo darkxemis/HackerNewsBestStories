@@ -6,6 +6,9 @@ using HackerNewsBestStories.Application.Common.Interfaces;
 using HackerNewsBestStories.Core.Common.Results;
 using HackerNewsBestStories.Core.Domain;
 using Microsoft.Extensions.Logging;
+using Polly.CircuitBreaker;
+using Polly.RateLimiting;
+using Polly.Timeout;
 
 public sealed class HackerNewsApiClient(
     IHttpClientFactory httpClientFactory,
@@ -68,7 +71,13 @@ public sealed class HackerNewsApiClient(
         {
             throw;
         }
-        catch (Exception ex) when (ex is HttpRequestException or JsonException or OperationCanceledException)
+        catch (Exception ex) when (
+            ex is HttpRequestException
+            or JsonException
+            or OperationCanceledException
+            or BrokenCircuitException
+            or TimeoutRejectedException
+            or RateLimiterRejectedException)
         {
             logger.LogError(ex, "Hacker News API request failed");
 
