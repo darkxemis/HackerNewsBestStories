@@ -4,4 +4,9 @@
     <ProjectReference Include="..\HackerNewsBestStories.Core\HackerNewsBestStories.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <PackageReference Include="MediatR" Version="14.2.0" />
+  </ItemGroup>
+
 </Project>
