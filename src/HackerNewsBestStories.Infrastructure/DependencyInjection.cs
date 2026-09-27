@@ -27,7 +27,7 @@ public static class DependencyInjection
             var options = sp.GetRequiredService<IOptions<HackerNewsOptions>>().Value;
 
             client.BaseAddress = new Uri(options.BaseAddress);
-            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+            client.Timeout = Timeout.InfiniteTimeSpan;
         })
         .AddStandardResilienceHandler(options =>
         {
