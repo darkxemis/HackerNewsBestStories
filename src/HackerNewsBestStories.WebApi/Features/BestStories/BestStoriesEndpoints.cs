@@ -15,7 +15,7 @@ public static class BestStoriesEndpoints
             .WithName("GetTopStories")
             .WithSummary("Returns the best Hacker News stories, highest score first.")
             .WithDescription(
-                "storyCount is how many stories you want back — the n from the exercise brief, " +
+                "storyCount is the number of stories to return — the n from the exercise brief, " +
                 "renamed so it reads better in the query string. Optional, defaults to 10, max 500.")
             .WithTags("Best Stories");
 

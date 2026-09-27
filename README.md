@@ -208,22 +208,13 @@ The brief only pinned down the response JSON and the "don't melt Hacker News" pa
 - **No auth and no rate limit on our side** — it's a single read-only endpoint meant to be evaluated, not exposed to the internet.
 - Timestamps are returned as ISO 8601 with their original offset.
 
-## Future improvements
-
-- Cache each story by id and assemble the lists from it, so `storyCount=10` and `storyCount=11` stop duplicating the same items, and refresh entries in the background (stale-while-revalidate) instead of making requests wait on a cold key.
-- Conditional requests (`ETag`) towards Hacker News for items we already hold.
-- Rate limiting and an API key on our own endpoint if it ever goes public.
-- OpenTelemetry: cache hit ratio, Hacker News latency, circuit-breaker state.
-- Integration tests with `WebApplicationFactory` and a stubbed Hacker News server.
-- Docker healthcheck and a non-root user in the final image.
-
 ---
 
 ## How this README was written
 
 This document was produced with AI assistance.
 
-My part is the one that actually matters: I decide what goes in. I tell the model what to cover, how to frame it and what to leave out, and I go over every draft until it reads the way I want — a document that doesn't sound like me isn't finished, however clean it looks. Every command, route, flag and JSON sample here is verified against the running project before it lands; nothing is taken on faith, and no technical decision was outsourced. The model drafts, I correct, sharpen and approve, and I sign off on the result.
+My part is the one that actually matters: I decide what goes in. I tell the model what to cover, how to frame it and what to leave out, and I go over every draft until it reads like me — a document that doesn't sound like me isn't finished, however clean it looks. Every command, route, flag and JSON sample here is verified against the running project before it lands; nothing is taken on faith, and no technical decision was outsourced. The model drafts, I correct, sharpen and approve, and I sign off on the result.
 
 What I do lean on it for is the repetitive work: the architecture boilerplate and the classes I reuse project after project — the result pattern, the pipeline behaviours, the DI registrations — plus turning my notes into tidy, readable documentation. That's typing and formatting, not judgment, so it's exactly where an assistant earns its keep.
 
