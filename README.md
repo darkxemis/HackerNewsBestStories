@@ -1,25 +1,12 @@
-<div align="center">
+# Hacker News Best Stories
 
-# 📰 Hacker News Best Stories
+A small REST API that serves the best *n* stories from Hacker News, sorted by score.
 
-**A small REST API that serves the best *n* stories from Hacker News, sorted by score.**
-
-[![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-[![C#](https://img.shields.io/badge/C%23-14-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![MediatR](https://img.shields.io/badge/MediatR-CQRS-8B5CF6)](https://github.com/jbogard/MediatR)
-[![Polly](https://img.shields.io/badge/Polly-Resilience-C72C48)](https://github.com/App-vNext/Polly)
-[![Serilog](https://img.shields.io/badge/Serilog-Structured-00B3C7?logo=serilog&logoColor=white)](https://serilog.net/)
-[![Scalar](https://img.shields.io/badge/Scalar-API_Docs-2B7A9E?logo=scalar&logoColor=white)](https://scalar.com/)
-[![xUnit](https://img.shields.io/badge/xUnit-Tests-512BD4?logo=xunit&logoColor=white)](https://xunit.net/)
-
-</div>
-
-> **A quick note on the shape of this thing:** the brief didn't mention architecture at all, so I built it the way I normally work — Clean Architecture with four projects (Core, Application, Infrastructure, WebApi), CQRS slices per feature and the result pattern for expected failures. The only piece I left out is persistence: there's no database in this exercise, everything comes from the Hacker News API, so the "domain" is just a `Story` record and Infrastructure holds an HTTP client instead of EF Core.
+> **How this ended up shaped like this:** the brief never mentions architecture, so I went with the layout I normally use when I work on real projects — Clean Architecture split in four projects (Core, Application, Infrastructure, WebApi), CQRS slices per feature and the result pattern for the failures I expect to happen. The only thing I skipped is persistence: there is no database in this exercise, everything comes from the Hacker News API, so the "domain" is just a `Story` record and Infrastructure holds an HTTP client instead of EF Core. The rest of the README calls out the other places where I did the same thing — the brief left them open and I went with my usual working habits.
 
 ---
 
-## 🚀 Getting started
+## Getting started
 
 ### Option 1 — Docker
 
@@ -61,7 +48,7 @@ curl "http://localhost:5093/api/v1/top-stories?storyCount=5"
 
 ---
 
-## 📝 The brief
+## The brief
 
 The exercise, condensed:
 
@@ -82,9 +69,9 @@ Hard requirements are the JSON shape of the response and not melting Hacker News
 ]
 ```
 
-Everything else — architecture, error format, cache TTL, naming — was left to me.
+Everything else — architecture, error format, cache TTL, naming — was left to me, so I decided it the way I normally decide it at work.
 
-## ✨ What it does
+## What it does
 
 - `GET /api/v1/top-stories?storyCount=10` returns the best stories, highest score first.
 - Keeps a comfortable distance between us and Hacker News:
@@ -97,7 +84,7 @@ Everything else — architecture, error format, cache TTL, naming — was left t
 
 ---
 
-## 📡 API
+## API
 
 | Method | Route | Description |
 | ------ | ----- | ----------- |
@@ -129,7 +116,7 @@ I've been using this shape in my own projects and I kept it here on purpose: `st
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 GET /api/v1/top-stories?storyCount=10
@@ -162,6 +149,8 @@ https://hacker-news.firebaseio.com
 | Logging | **Serilog** — console + daily rolling files + request logging |
 | API docs | **Scalar** on top of native `Microsoft.AspNetCore.OpenApi` |
 
+Yes, it's a lot of moving parts for a single endpoint. I know that. It's still the structure I start from by default, because it costs me nothing extra now and the day someone adds a second feature the paths are already there — I've regretted more one-off "quick" endpoints than I've regretted an extra project in the solution.
+
 ### Repository structure
 
 ```
@@ -188,7 +177,7 @@ Dependencies only point inwards: `Core ← Application ← Infrastructure ← We
 
 ---
 
-## 🧰 Tech stack
+## Tech stack
 
 - **.NET 10** (C# 14, nullable + implicit usings)
 - ASP.NET Core Minimal APIs · MediatR 14 · FluentValidation 12
@@ -196,7 +185,7 @@ Dependencies only point inwards: `Core ← Application ← Infrastructure ← We
 - xUnit · Moq · FluentAssertions
 - Docker / Docker Compose
 
-## 🧪 Tests
+## Tests
 
 ```bash
 dotnet test
@@ -206,7 +195,9 @@ dotnet test
 
 ---
 
-## 📋 Assumptions
+## Assumptions
+
+The brief only pinned down the response JSON and the "don't melt Hacker News" part. Everything below was open, and these are the calls I made the way I normally make them on other projects:
 
 - **Range 1–500.** The brief never sets one; 500 stops a single request from pulling down Hacker News' entire best list. Outside the range → `400`.
 - **Ordering.** `beststories.json` already arrives ordered by score, but I sort again by score descending (ties broken by the highest id) so the contract doesn't depend on upstream behaviour.
@@ -217,7 +208,7 @@ dotnet test
 - **No auth and no rate limit on our side** — it's a single read-only endpoint meant to be evaluated, not exposed to the internet.
 - Timestamps are returned as ISO 8601 with their original offset.
 
-## 🔮 Future improvements
+## Future improvements
 
 - Cache each story by id and assemble the lists from it, so `storyCount=10` and `storyCount=11` stop duplicating the same items, and refresh entries in the background (stale-while-revalidate) instead of making requests wait on a cold key.
 - Conditional requests (`ETag`) towards Hacker News for items we already hold.
@@ -228,8 +219,16 @@ dotnet test
 
 ---
 
-<div align="center">
+## How this README was written
 
-Made to be run in one command: `docker compose up -d --build`.
+This document was produced with AI assistance.
 
-</div>
+My part is the one that actually matters: I decide what goes in. I tell the model what to cover, how to frame it and what to leave out, and I go over every draft until it reads the way I want — a document that doesn't sound like me isn't finished, however clean it looks. Every command, route, flag and JSON sample here is verified against the running project before it lands; nothing is taken on faith, and no technical decision was outsourced. The model drafts, I correct, sharpen and approve, and I sign off on the result.
+
+What I do lean on it for is the repetitive work: the architecture boilerplate and the classes I reuse project after project — the result pattern, the pipeline behaviours, the DI registrations — plus turning my notes into tidy, readable documentation. That's typing and formatting, not judgment, so it's exactly where an assistant earns its keep.
+
+In short: written faster with AI, thought through and verified by me. That's how I work with the tools we have, and I'd rather be transparent about it than pretend otherwise.
+
+---
+
+Run it with `docker compose up -d --build` and open http://localhost:5093/scalar/v1.
