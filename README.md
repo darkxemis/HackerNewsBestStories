@@ -2,13 +2,13 @@
 
 A small REST API that serves the best *n* stories from Hacker News, sorted by score.
 
-> **How this ended up shaped like this:** the brief never mentions architecture, so I went with the layout I normally use when I work on real projects — Clean Architecture split in four projects (Core, Application, Infrastructure, WebApi), CQRS slices per feature and the result pattern for the failures I expect to happen. The only thing I skipped is persistence: there is no database in this exercise, everything comes from the Hacker News API, so the "domain" is just a `Story` record and Infrastructure holds an HTTP client instead of EF Core. The rest of the README calls out the other places where I did the same thing — the brief left them open and I went with my usual working habits.
+> **How this ended up shaped like this:** the brief never mentions architecture, so I went with the layout I normally use when I work on real projects Clean Architecture split in four projects (Core, Application, Infrastructure, WebApi), CQRS slices per feature and the result pattern for the failures I expect to happen. The only thing I skipped is persistence: there is no database in this exercise, everything comes from the Hacker News API, so the "domain" is just a `Story` record and Infrastructure holds an HTTP client instead of EF Core. The rest of the README calls out the other places where I did the same thing the brief left them open and I went with my usual working habits.
 
 ---
 
 ## Getting started
 
-### Option 1 — Docker
+### Option 1 Docker
 
 ```bash
 git clone https://github.com/darkxemis/HackerNewsBestStories.git
@@ -18,7 +18,7 @@ docker compose up -d --build
 
 The API is up on **http://localhost:5093**. There is no database or any other service to set up. Stop it with `docker compose down`.
 
-### Option 2 — running it locally
+### Option 2 running it locally
 
 All you need is the [.NET 10 SDK](https://dotnet.microsoft.com/download):
 
@@ -69,7 +69,7 @@ Hard requirements are the JSON shape of the response and not melting Hacker News
 ]
 ```
 
-Everything else — architecture, error format, cache TTL, naming — was left to me, so I decided it the way I normally decide it at work.
+Everything else architecture, error format, cache TTL, naming was left to me, so I decided it the way I normally decide it at work.
 
 ## What it does
 
@@ -77,7 +77,7 @@ Everything else — architecture, error format, cache TTL, naming — was left t
 - Keeps a comfortable distance between us and Hacker News:
   - a concurrency gate caps parallel calls to **8** at any moment,
   - **Polly** adds rate limiting, timeouts, retries and a circuit breaker,
-  - a **5-minute cache** absorbs the bursts — concurrent requests for the same `storyCount` are coalesced into a single upstream call, and failures are never cached.
+  - a **5-minute cache** absorbs the bursts concurrent requests for the same `storyCount` are coalesced into a single upstream call, and failures are never cached.
 - Input validation runs in the MediatR pipeline, before the handler ever sees the query.
 - Anything unexpected is caught by a global exception handler, so clients always get JSON back instead of an HTML error page.
 - Structured logs go to the console and to daily files under `logs/`.
@@ -106,7 +106,7 @@ Every failure comes back as **ProblemDetails (RFC 7807)**, plus a couple of fiel
 }
 ```
 
-I've been using this shape in my own projects and I kept it here on purpose: `status` and `title` cover the generic case, but the `tag` is what a client should actually switch on. Tags are stable keys, so the frontend can translate messages itself instead of parsing (and re-localising) human text — that has saved us more than once. `traceId` points at the matching Serilog entry when something breaks.
+I've been using this shape in my own projects and I kept it here on purpose: `status` and `title` cover the generic case, but the `tag` is what a client should actually switch on. Tags are stable keys, so the frontend can translate messages itself instead of parsing (and re-localising) human text that has saved us more than once. `traceId` points at the matching Serilog entry when something breaks.
 
 | Status | Tag | When |
 | ------ | --- | ---- |
@@ -146,10 +146,10 @@ https://hacker-news.firebaseio.com
 | Resilience | **Microsoft.Extensions.Http.Resilience** (standard handler) + `SemaphoreSlim` gate |
 | Business errors | **`Result<T>` + `Error`** mapped to ProblemDetails by the endpoint |
 | Unexpected errors | Global **`IExceptionHandler`** → ProblemDetails + `traceId` |
-| Logging | **Serilog** — console + daily rolling files + request logging |
+| Logging | **Serilog** console + daily rolling files + request logging |
 | API docs | **Scalar** on top of native `Microsoft.AspNetCore.OpenApi` |
 
-Yes, it's a lot of moving parts for a single endpoint. I know that. It's still the structure I start from by default, because it costs me nothing extra now and the day someone adds a second feature the paths are already there — I've regretted more one-off "quick" endpoints than I've regretted an extra project in the solution.
+Yes, it's a lot of moving parts for a single endpoint. I know that. It's still the structure I start from by default, because it costs me nothing extra now and the day someone adds a second feature the paths are already there I've regretted more one-off "quick" endpoints than I've regretted an extra project in the solution.
 
 ### Repository structure
 
@@ -160,7 +160,7 @@ HackerNewsBestStories/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── src/
-│   ├── HackerNewsBestStories.Core/            # Result, Error, ErrorTags, Story — zero dependencies
+│   ├── HackerNewsBestStories.Core/            # Result, Error, ErrorTags, Story zero dependencies
 │   ├── HackerNewsBestStories.Application/     # features, DTOs, ports, cache configuration
 │   │   └── Features/BestStories/              # query + handler + validator
 │   ├── HackerNewsBestStories.Infrastructure/  # Hacker News client, concurrency gate, Polly, DI
@@ -201,11 +201,11 @@ The brief only pinned down the response JSON and the "don't melt Hacker News" pa
 
 - **Range 1–500.** The brief never sets one; 500 stops a single request from pulling down Hacker News' entire best list. Outside the range → `400`.
 - **Ordering.** `beststories.json` already arrives ordered by score, but I sort again by score descending (ties broken by the highest id) so the contract doesn't depend on upstream behaviour.
-- **`commentCount` is `descendants`** — the total number of comments in the thread — and `0` when a story has none yet.
+- **`commentCount` is `descendants`** the total number of comments in the thread and `0` when a story has none yet.
 - **Stories with no external link** (Ask HN, polls) fall back to `https://news.ycombinator.com/item?id={id}` for `uri`.
 - **Deleted or unavailable items** (`item/{id}` coming back empty) are dropped from the list instead of failing the request, so the response can come back shorter than `storyCount`.
 - **Cache TTL** of 5 minutes per `storyCount`, configurable in `appsettings.json` under `Cache:ExpirationSeconds`.
-- **No auth and no rate limit on our side** — it's a single read-only endpoint meant to be evaluated, not exposed to the internet.
+- **No auth and no rate limit on our side** it's a single read-only endpoint meant to be evaluated, not exposed to the internet.
 - Timestamps are returned as ISO 8601 with their original offset.
 
 ---
@@ -214,9 +214,9 @@ The brief only pinned down the response JSON and the "don't melt Hacker News" pa
 
 This document was produced with AI assistance.
 
-My part is the one that actually matters: I decide what goes in. I tell the model what to cover, how to frame it and what to leave out, and I go over every draft until it reads like me — a document that doesn't sound like me isn't finished, however clean it looks. Every command, route, flag and JSON sample here is verified against the running project before it lands; nothing is taken on faith, and no technical decision was outsourced. The model drafts, I correct, sharpen and approve, and I sign off on the result.
+My part is the one that actually matters: I decide what goes in. I tell the model what to cover, how to frame it and what to leave out, and I go over every draft until it reads like me a document that doesn't sound like me isn't finished, however clean it looks. Every command, route, flag and JSON sample here is verified against the running project before it lands; nothing is taken on faith, and no technical decision was outsourced. The model drafts, I correct, sharpen and approve, and I sign off on the result.
 
-What I do lean on it for is the repetitive work: the architecture boilerplate and the classes I reuse project after project — the result pattern, the pipeline behaviours, the DI registrations — plus turning my notes into tidy, readable documentation. That's typing and formatting, not judgment, so it's exactly where an assistant earns its keep.
+What I do lean on it for is the repetitive work: the architecture boilerplate and the classes I reuse project after project the result pattern, the pipeline behaviours, the DI registrations plus turning my notes into tidy, readable documentation. That's typing and formatting, not judgment, so it's exactly where an assistant earns its keep.
 
 In short: written faster with AI, thought through and verified by me. That's how I work with the tools we have, and I'd rather be transparent about it than pretend otherwise.
 
