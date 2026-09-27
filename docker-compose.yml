@@ -1,0 +1,13 @@
+services:
+  api:
+    container_name: hackernewsbeststories-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    ports:
+      - "5093:8080"
+    volumes:
+      - ./logs:/app/logs
