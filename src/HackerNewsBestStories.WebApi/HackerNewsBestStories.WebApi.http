@@ -1,6 +1,6 @@
 @HackerNewsBestStories_HostAddress = http://localhost:5093
 
-GET {{HackerNewsBestStories_HostAddress}}/weatherforecast/
+GET {{HackerNewsBestStories_HostAddress}}/api/v1/top-stories?storyCount=10
 Accept: application/json
 
 ###
